@@ -4,8 +4,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
+/**
+ * 起動クラス
+ */
 class ImplementingServerSideKotlinDevelopmentApplication
 
+/**
+ * main
+ */
 fun main(args: Array<String>) {
-	runApplication<ImplementingServerSideKotlinDevelopmentApplication>(*args)
+    @Suppress("SpreadOperator")
+    runApplication<ImplementingServerSideKotlinDevelopmentApplication>(*args)
 }
