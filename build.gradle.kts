@@ -54,7 +54,7 @@ plugins {
 	 * - API仕様をスキーマファイル(yaml)に書いて、コード生成し、それを利用するようにする
 	 * - 可能な限りプロダクトコードに依存しないようにする(生成したコードにプロダクトコードを依存させる)
 	 */
-	id("org.openapi.generator") version "6.2.0"
+	id("org.openapi.generator") version "7.2.0"
 }
 
 group = "com.example"
@@ -238,19 +238,6 @@ tasks.bootBuildImage {
 	builder.set("paketobuildpacks/builder-jammy-base:latest")
 }
 
-
-
-tasks.withType<KotlinCompile> {
-	kotlinOptions {
-		freeCompilerArgs = listOf("-Xjsr305=strict")
-		jvmTarget = "17"
-	}
-}
-
-tasks.withType<Test> {
-	useJUnitPlatform()
-}
-
 /**
  * detektの設定
  *
@@ -272,7 +259,7 @@ detekt {
 task<GenerateTask>("generateApiServer") {
 	generatorName.set("kotlin-spring")
 	inputSpec.set("$projectDir/docs/openapi.yaml")
-	outputDir.set("${layout.buildDirectory}/openapi/server-code/") // .gitignoreされているので注意(わざとここにあります)
+	outputDir.set("${buildDir}/openapi/server-code") // .gitignoreされているので注意(わざとここにあります)
 	apiPackage.set("com.example.implementingserversidekotlindevelopment.openapi.generated.controller")
 	modelPackage.set("com.example.implementingserversidekotlindevelopment.openapi.generated.model")
 	configOptions.set(
@@ -302,5 +289,5 @@ tasks.compileKotlin {
  * OpenAPI Generator によって生成されたコードを import できるようにする
  */
 kotlin.sourceSets.main {
-	kotlin.srcDir("${layout.buildDirectory}/openapi/server-code/src/main")
+	kotlin.srcDir("${buildDir}/openapi/server-code/src/main")
 }
