@@ -265,6 +265,7 @@ task<GenerateTask>("generateApiServer") {
 	configOptions.set(
 		mapOf(
 			"interfaceOnly" to "true",
+			"useSpringBoot3" to "true"
 		)
 	)
 	/**
