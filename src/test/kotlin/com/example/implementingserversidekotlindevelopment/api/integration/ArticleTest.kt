@@ -102,7 +102,7 @@ class ArticleTest {
                 {
                   "errors": {
                     "body": [
-                      "slug は 32 文字の英小文字数字です。"
+                      "slugは32文字の英小文字数字です。"
                     ]
                   }
                 }
