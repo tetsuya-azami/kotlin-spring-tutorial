@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 
 @Repository
-class ArticleRepositoryImpl(val namedParameterJdbcTemplate: NamedParameterJdbcTemplate):ArticleRepository{
+class ArticleRepositoryImpl(val namedParameterJdbcTemplate: NamedParameterJdbcTemplate) : ArticleRepository {
 
     override fun findBySlug(slug: Slug): Either<ArticleRepository.FindBySlugError, CreatedArticle> {
         val sql = """
@@ -26,7 +26,7 @@ class ArticleRepositoryImpl(val namedParameterJdbcTemplate: NamedParameterJdbcTe
         val articleMapList =
             namedParameterJdbcTemplate.queryForList(sql, MapSqlParameterSource().addValue("slug", slug.value))
 
-        if (articleMapList.isEmpty()){
+        if (articleMapList.isEmpty()) {
             return ArticleRepository.FindBySlugError.NotFound(slug = slug).left()
         }
 
@@ -65,5 +65,133 @@ class ArticleRepositoryImpl(val namedParameterJdbcTemplate: NamedParameterJdbcTe
         )
 
         return createdArticle.right()
+    }
+
+    override fun all(): List<CreatedArticle> {
+        val sql = """
+            SELECT
+                articles.slug
+                , articles.title
+                , articles.body
+                , articles.description
+            FROM
+                articles
+            ;
+        """.trimIndent()
+        val articleMap = namedParameterJdbcTemplate.queryForList(sql, MapSqlParameterSource())
+
+        return articleMap.map {
+            CreatedArticle.newWithoutValidation(
+                Slug.newWithoutValidation(it["slug"].toString()),
+                Title.newWithoutValidation(it["title"].toString()),
+                Description.newWithoutValidation(it["description"].toString()),
+                Body.newWithoutValidation(it["body"].toString())
+            )
+        }
+    }
+
+    override fun update(
+        slug: Slug,
+        updatableCreatedArticle: UpdatableCreatedArticle
+    ): Either<ArticleRepository.UpdateError, CreatedArticle> {
+        /**
+         * slug に該当する作成済記事を調べる
+         */
+        val findArticleSql = """
+            SELECT
+                articles.slug
+                , articles.title
+                , articles.body
+                , articles.description
+            FROM
+                articles
+            WHERE
+                slug = :slug
+        """.trimIndent()
+        val articleMapList =
+            namedParameterJdbcTemplate.queryForList(
+                findArticleSql,
+                MapSqlParameterSource().addValue("slug", slug.value)
+            )
+
+        if (articleMapList.isEmpty()) {
+            return ArticleRepository.UpdateError.NotFound(slug = slug).left()
+        }
+
+        /**
+         * 記事を更新
+         */
+        val sql = """
+            UPDATE
+                articles
+            SET
+                title = :title
+                , body = :body
+                , description = :description
+            WHERE
+                slug = :slug
+        """.trimIndent()
+
+        namedParameterJdbcTemplate.update(
+            sql,
+            MapSqlParameterSource()
+                .addValue("slug", slug.value)
+                .addValue("title", updatableCreatedArticle.title.value)
+                .addValue("body", updatableCreatedArticle.body.value)
+                .addValue("description", updatableCreatedArticle.description.value)
+        )
+
+        return CreatedArticle.newWithoutValidation(
+            slug = slug,
+            title = updatableCreatedArticle.title,
+            body = updatableCreatedArticle.body,
+            description = updatableCreatedArticle.description
+        ).right()
+    }
+
+    override fun delete(slug: Slug): Either<ArticleRepository.DeleteError, Unit> {
+        /**
+         * slug に該当する作成済記事を調べる
+         */
+        val findArticleSql = """
+            SELECT
+                articles.slug
+                , articles.title
+                , articles.body
+                , articles.description
+            FROM
+                articles
+            WHERE
+                slug = :slug
+        """.trimIndent()
+        val articleMapList =
+            namedParameterJdbcTemplate.queryForList(
+                findArticleSql,
+                MapSqlParameterSource().addValue("slug", slug.value)
+            )
+
+        /**
+         * DB から作成済記事が見つからなかった場合、早期 return
+         */
+        if (articleMapList.isEmpty()) {
+            return ArticleRepository.DeleteError.NotFound(slug = slug).left()
+        }
+
+        /**
+         * 記事を削除
+         */
+        val sql = """
+            DELETE FROM
+                articles
+            WHERE
+                slug = :slug
+        """.trimIndent()
+        namedParameterJdbcTemplate.update(
+            sql,
+            MapSqlParameterSource()
+                .addValue("slug", slug.value)
+        )
+
+        return Unit.right()
     }
 }
