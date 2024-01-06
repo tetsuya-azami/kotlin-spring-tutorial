@@ -16,8 +16,7 @@ class ArticleController(
     val feedArticleUseCase: FeedArticleUseCase,
     val updateArticleUseCase: UpdateArticleUseCase,
     val deleteArticleUseCase: DeleteArticleUseCase
-) :
-    ArticlesApi {
+) : ArticlesApi {
     override fun getArticle(slug: String): ResponseEntity<SingleArticleResponse> {
         val createdArticle = showArticleUseCase.execute(slug).fold(
             { throw ShowArticleUseCaseErrorException(it) },

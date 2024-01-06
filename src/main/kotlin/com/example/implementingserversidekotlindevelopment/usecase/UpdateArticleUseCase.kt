@@ -1,6 +1,7 @@
 package com.example.implementingserversidekotlindevelopment.usecase
 
 import arrow.core.Either
+import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.right
 import com.example.implementingserversidekotlindevelopment.common.ValidationError
@@ -41,10 +42,14 @@ class UpdateArticleUseCaseImpl(val articleRepository: ArticleRepository) : Updat
         )
 
         val updatedArticle =
-            articleRepository.update(slug = validatedSlug, updatableCreatedArticle = unsavedCreatedArticle).fold(
-                { return UpdateArticleUseCase.Error.NotFoundArticleBySlug(slug = validatedSlug).left() },
-                { it }
-            )
+            articleRepository.update(slug = validatedSlug, updatableCreatedArticle = unsavedCreatedArticle)
+                .getOrHandle {
+                    when (it) {
+                        is ArticleRepository.UpdateError.NotFound -> {
+                            return UpdateArticleUseCase.Error.NotFoundArticleBySlug(validatedSlug).left()
+                        }
+                    }
+                }
 
         return updatedArticle.right()
     }
